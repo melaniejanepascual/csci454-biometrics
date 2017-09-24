@@ -1,0 +1,51 @@
+---
+title: "CSCI 434 HW1"
+author: "MJ Pascual"
+date: "September 20, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+## Set up objects
+scores <- read.csv("hw1_list.csv")
+
+scores$Match <- ifelse(substr(scores$sequence1,1,6) == substr(scores$sequence2,1,6),"Genuine", "Imposter")
+
+genuine.scores <- subset(scores, Match == "Genuine")
+imposter.scores <- subset(scores, Match == "Imposter")
+
+```
+
+## Question 1
+
+```{r}
+hist(genuine.scores$score, col = rgb(1,0,0,0.5), main = "Genuine and Imposter Distribution", xlab = "Distance Scores", ylab = "Frequency")
+hist(imposter.scores$score, col = rgb(0,0,1,0.5), add = T)
+
+legend("top", c("Genuine", "Imposter"), fill=c(rgb(1,0,0,0.5), rgb(0,0,1,0.5)))
+
+
+```
+
+## Question 2
+```{r}
+genuine.sd <- sd(genuine.scores$score)
+imposter.sd <- sd(imposter.scores$score)
+genuine.mean <- mean(genuine.scores$score)
+imposter.mean <- mean(imposter.scores$score)
+
+dprime <- (sqrt(2) * abs((genuine.mean)-(imposter.mean)))/sqrt((genuine.sd)+(imposter.sd))
+
+```
+
+## Question 3
+```{r}
+FARvsFRR <- data.frame(FRR, FAR)
+for(d in seq(0.1, 0.9, 0.05)) {
+  FAR <- c(FRR, nrow(subset(GenuineDF, score > d))/nrow(GenuineDF))
+}
+```
