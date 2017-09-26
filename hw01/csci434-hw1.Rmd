@@ -10,42 +10,57 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-## Set up objects
 scores <- read.csv("hw1_list.csv")
-
 scores$Match <- ifelse(substr(scores$sequence1,1,6) == substr(scores$sequence2,1,6),"Genuine", "Imposter")
-
 genuine.scores <- subset(scores, Match == "Genuine")
 imposter.scores <- subset(scores, Match == "Imposter")
 
 ```
 
-## Question 1
+## 1) Distribution of Genuine and Imposter Scores
 
 ```{r}
-hist(genuine.scores$score, col = rgb(1,0,0,0.5), main = "Genuine and Imposter Distribution", xlab = "Distance Scores", ylab = "Frequency")
-hist(imposter.scores$score, col = rgb(0,0,1,0.5), add = T)
-
+hist(genuine.scores$score, col = rgb(1,0,0,0.5), main = "Genuine and Imposter Distribution", xlab = "Distance Scores", ylab = "Frequency", freq = FALSE)
+hist(imposter.scores$score, col = rgb(0,0,1,0.5), add = T, freq = FALSE)
 legend("top", c("Genuine", "Imposter"), fill=c(rgb(1,0,0,0.5), rgb(0,0,1,0.5)))
 
 
 ```
 
-## Question 2
+## 2) D-prime
 ```{r}
 genuine.sd <- sd(genuine.scores$score)
 imposter.sd <- sd(imposter.scores$score)
 genuine.mean <- mean(genuine.scores$score)
 imposter.mean <- mean(imposter.scores$score)
 
-dprime <- (sqrt(2) * abs((genuine.mean)-(imposter.mean)))/sqrt((genuine.sd)+(imposter.sd))
+dprime <- (sqrt(2) * abs((genuine.mean)-(imposter.mean)))/sqrt((genuine.sd^2)+(imposter.sd^2))
 
 ```
 
-## Question 3
+D-prime is approximately 4.4899.
+
+
+## 3) Detection Error Tradeoff (DET) Curve
+
 ```{r}
-FARvsFRR <- data.frame(FRR, FAR)
-for(d in seq(0.1, 0.9, 0.05)) {
-  FAR <- c(FRR, nrow(subset(GenuineDF, score > d))/nrow(GenuineDF))
+  FAR <- c()
+  FRR <- c()
+  
+for(threshold in seq(0.2, 0.99, 0.02)) {
+  far.formula <-nrow(subset(imposter.scores, imposter.scores$score < threshold))/nrow(imposter.scores)
+  FAR <- c(FAR, far.formula)
+  frr.formula <- nrow(subset(genuine.scores, genuine.scores$score >= threshold))/nrow(genuine.scores)
+  FRR <- c(FRR, frr.formula)
 }
+
+x <- seq(0.0, 0.3, 0.1)
+y <- seq(0.0, 0.3, 0.1)
+
+  
+plot(FAR, FRR, xlim = range(0 , 0.75), ylim = range (0, 0.35), type = "l", col = "blue")
+lines(x, y, col = "red")
+
 ```
+
+Equal Error Rate is approximately 0.04, 0.45. 
