@@ -2,7 +2,7 @@ library("png")
 
 img = readPNG("~/source/image.png")
 #This assignment requires you to transform a matrix into a single-dimension 
-# vector. This can be done using the as.vector function.
+#vector. This can be done using the as.vector function.
 
 vec_img = as.vector(img)
 # Another tool that will be useful in this assignment is the transpose function. 

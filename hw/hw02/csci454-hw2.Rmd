@@ -4,18 +4,48 @@ author: "MJ Pascual"
 date: "October 28, 2017"
 output: html_document
 ---
+## Principal Component Analysis
+In this assignment, you will implement the Principal Component Analysis method for face recognition (see below). Using a set of training images, you will compute the set of Eigenvectors to find the principal components representing the face space. Using a subset, the first ten (10) Eigenvectors, you will find the corresponding weighted sum of the Eigenvectors for each image in the testing set and perform a face matching experiment. Distance scores will be calculated by subtracting the weights ωi from ωj and summing their total LaTeX: ∑(ωi−ωj).
 
+Using the distance scores calculated from each image pair, you will perform an all vs. all matching experiment to create a distance matrix. Next, you will plot the genuine and impostor distributions using the same implementation as Homework Assignment 1. Finally, you will plot the DET curve (FAR vs. FRR), line of equal error, and estimate the Equal Error Rate.
+
+## Step 1
+Implement the each image as a d-dimensional column vector x1, x2,...,xN and compute the average µ. 
+
+The mean is the row-wise mean when all of the images are stored in a single matrix. Compute average of training set
 ```{r}
 library("png")
 
-img = readPNG("~/source/image.png")
-#This assignment requires you to transform a matrix into a single-dimension 
-#vector. This can be done using the as.vector function.
+# Reading in training image 1
+img1 = readPNG("~/Developments/csci454-biometrics/hw/hw02/trainingfaces2/1_0.png")
+vec_img1 = as.vector(img1)
 
-vec_img = as.vector(img)
-# Another tool that will be useful in this assignment is the transpose function. 
+img2 = readPNG("~/Developments/csci454-biometrics/hw/hw02/trainingfaces2/2_0.png")
+vec_img2 = as.vector(img2)
 
-aMatrix = t(aMatrix)
+filepath = "~/Developments/csci454-biometrics/hw/hw02/trainingfaces2/"
+filenames = list.files(filepath, pattern = "*.png")
+fullpathnames = paste(filepath, filenames, sep="")
+
+
+images.matrix = cbind(vec_img1, vec_img2)
+
+images.matrix = t(images.matrix)
+```
+
+## Step 2
+Define the matrix X as the follows: X = [(x1-µ) (x2-µ) ... (xN-µ)]. X is a d x N matrix.
+
+## Step 3
+Calculate the covariance matrix C = XXT, where XT is the transpose of X. d by N multiplied by a N by d matrix is results in a d by d matrix.
+```{r}
+xt <- t(x)
+covariance <- x * xt
+```
+
+## Step 4
+Compute the Eigenvectors of the covariance matrix C by solving the following Eigen system: CE = 𝜆E (The right size of the equation is scalar multiplication, and the left side is matrix multiplication.)
+```{r}
 # Lastly, you will need to use the Eigenvector solver to find the Eigenvectors 
 # and Eigenvalues from the covariance matrix. This can be done using the 'eigen' 
 # function.
@@ -26,33 +56,13 @@ ev = eigen(aMatrix)
 
 ev$vectors
 ev$values
-
 ```
 
-
+## Step 5 
+Any vector x can be represented as a weighted sum of the Eigenvectors, ω = ETx, where ωj is the weight associated with the Eigenvector ej
 ```{r}
-install.packages("png")
-library("png")
-img <- readIMG("~/Developments/csci454-biometrics/IMG_0996.img")
-dim(img) # size of image
-
-img2 = as.vector(img)
-length(img2)
-
-img2 -> img3
-x = cbind(img2, img3)
-
-dim(x)
-
-eigen()
-
-t() # transpose function
-
-
 
 ```
-
-
 
 
 ```{r}
