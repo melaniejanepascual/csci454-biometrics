@@ -18,3 +18,35 @@ ev = eigen(aMatrix)
 
 ev$vectors
 ev$values
+
+## More help
+
+install.packages("reshape")
+library(reshape)
+
+melt()
+
+a = matrix(c(1:64), nrow = 8, ncol = 8)
+
+## get scores in upper triangular matrix ???
+
+upper.tri(a)
+
+## give boolean values - for what?
+
+a[upper.tri(a)] 
+
+## shows set of scores in upper triangular section
+
+melt(a)
+
+
+melt(a[upper.tri(a)])
+
+## end function to get NxN matrix to become a set of rows with a set of values in th end
+## can become the sequence ID
+melt(a)[melt(upper.tri(a))$value,]
+
+melt(upper.tri(a))$value
+
+## melt function is doing matrix to list

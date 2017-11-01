@@ -74,6 +74,16 @@ et <- t(ev)
 weights <- et*x
 ```
 
+## Testing data (still part of step 5)
+Convert an image to a vector, set the weight???
+
+``` {r}
+
+
+```
+
+## HOMEWORK 1 BUILD OFF
+
 
 ```{r}
 scores <- read.csv("hw1_list.csv")
