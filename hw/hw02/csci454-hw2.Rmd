@@ -17,72 +17,73 @@ The mean is the row-wise mean when all of the images are stored in a single matr
 ```{r}
 library("png")
 
-# Reading in training image 1
-img1 = readPNG("~/Developments/csci454-biometrics/hw/hw02/trainingfaces2/1_0.png")
-vec_img1 = as.vector(img1)
-
-img2 = readPNG("~/Developments/csci454-biometrics/hw/hw02/trainingfaces2/2_0.png")
-vec_img2 = as.vector(img2)
-
 filepath = "~/Developments/csci454-biometrics/hw/hw02/trainingfaces2/"
 filenames = list.files(filepath, pattern = "*.png")
 fullpathnames = paste(filepath, filenames, sep="")
 
+images <- c()
+for(i in 1:length(fullpathnames)) {
+  images <- cbind(images, as.vector(readPNG(fullpathnames[i])))
+}
 
-images.matrix = cbind(vec_img1, vec_img2)
-images.matrix = t(images.matrix)
+the.mean <- rowMeans(images)
+xmean <- apply(images, 1, function(x) x-the.mean)
+
 ```
 
 ## Step 2
 Define the matrix X as the follows: X = [(x1-µ) (x2-µ) ... (xN-µ)]. X is a d x N matrix.
 
 ```{r}
-x.matrix
-
-## create a for loop that iterates through all of the vectors and subtracts the mean from each vector?
-for(1:180) {
-  
-}
+xt.matrix <- t(xmean)
 ```
 
 ## Step 3
 Calculate the covariance matrix C = XXT, where XT is the transpose of X. d by N multiplied by a N by d matrix is results in a d by d matrix.
 ```{r}
-xt <- t(x)
-covariance <- x * xt
+covariance <- xmean %*% xt.matrix;
 ```
 
 ## Step 4
 Compute the Eigenvectors of the covariance matrix C by solving the following Eigen system: CE = 𝜆E (The right size of the equation is scalar multiplication, and the left side is matrix multiplication.)
 ```{r}
-# Lastly, you will need to use the Eigenvector solver to find the Eigenvectors 
-# and Eigenvalues from the covariance matrix. This can be done using the 'eigen' 
-# function.
+ev = eigen(covariance)
+ten.eigen.vectors <- ev$vectors[,1:10]
+et <- t(ten.eigen.vectors)
 
-ev = eigen(aMatrix)
-
-# To access the Eigenvectors and Eigenvalues, use the '$' operator
-
-ev$vectors
-ev$values
 ```
 
 ## Step 5 
 Any vector x can be represented as a weighted sum of the Eigenvectors, ω = ETx, where ωj is the weight associated with the Eigenvector ej
 ```{r}
-et <- t(ev)
-weights <- et*x
+weight <- et %*% xmean
 ```
 
-## Testing data (still part of step 5)
-Convert an image to a vector, set the weight???
+## Testing data
 
 ``` {r}
+filepath.test = "~/Developments/csci454-biometrics/hw/hw02/testingfaces2/"
+filenames.test = list.files(filepath.test, pattern = "*.png")
+fullpathnames.test = paste(filepath.test, filenames.test, sep="")
 
+images.test <- c()
+for(i in 1:length(fullpathnames.test)) {
+  d <- cbind(as.vector(readPNG(fullpathnames.test[i])))
+  images.test <- cbind(images.test, et %*% d)
+}
+
+difference <- c()
+for(i in 1:length(images.test)) {
+  difference <- cbind(abs(images.test[i, i]-images.test[i + 1, i + 1]))
+ 
+}
+
+## when looking at 2 columns. Subtract the difference, get the absolute and then sum everything up
 
 ```
 
-## HOMEWORK 1 BUILD OFF
+## Hw 1
+Using the distance scores calculated from each image pair, you will perform an all vs. all matching experiment to create a distance matrix. Next, you will plot the genuine and impostor distributions using the same implementation as Homework Assignment 1. Finally, you will plot the DET curve (FAR vs. FRR), line of equal error, and estimate the Equal Error Rate.
 
 
 ```{r}
@@ -90,7 +91,6 @@ scores <- read.csv("hw1_list.csv")
 scores$Match <- ifelse(substr(scores$sequence1,1,6) == substr(scores$sequence2,1,6),"Genuine", "Imposter")
 genuine.scores <- subset(scores, Match == "Genuine")
 imposter.scores <- subset(scores, Match == "Imposter")
-
 ```
 
 ## 1) Distribution of Genuine and Imposter Scores
@@ -114,7 +114,7 @@ dprime <- (sqrt(2) * abs((genuine.mean)-(imposter.mean)))/sqrt((genuine.sd^2)+(i
 
 ```
 
-D-prime is approximately 4.4899.
+D-prime is approximately 
 
 
 ## 3) Detection Error Tradeoff (DET) Curve
@@ -139,4 +139,4 @@ lines(x, y, col = "red")
 
 ```
 
-Equal Error Rate is approximately 0.04, 0.45. 
+Equal Error Rate is approximately 
