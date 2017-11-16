@@ -72,13 +72,11 @@ for(i in 1:length(fullpathnames.test)) {
   images.test <- cbind(images.test, et %*% d)
 }
 
+## subtract the difference between 2 columns, get the absolute and then sum everything up = which equals to the distance scores
 difference <- c()
-for(i in 1:length(images.test)) {
-  difference <- cbind(abs(images.test[i, i]-images.test[i + 1, i + 1]))
- 
+for(i in c(1:dim(images.test[2]))) {
+    difference <- cbind(abs())
 }
-
-## when looking at 2 columns. Subtract the difference, get the absolute and then sum everything up
 
 ```
 
