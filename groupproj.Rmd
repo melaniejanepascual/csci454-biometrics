@@ -1,0 +1,29 @@
+---
+title: "hey"
+author: "MJ Pascual"
+date: "December 5, 2017"
+output: html_document
+---
+
+Plot the genuine distribution for each subject on the same graph. (hint. use the `lines` function to plot multiple curves on the same plot).
+
+```{r}
+library(reshape)
+library(ggplot2)
+scores <- read.table(file = "hwscores.csv", sep = ",")
+dim(scores)
+
+## Plot the genuine distribution for each subject on the same graph. (hint. use the `lines` function to plot multiple curves on the same plot).
+colnames(scores) -> a
+substring(a,1,3) -> a
+names <- unique(a) 
+a <- as.matrix(a)
+allmatrices = vector("list", length(names))
+for(i in 1:length(names)) {
+  allmatrices[[i]] <- scores[which(a == names[i]), which(a == names[i])]
+}
+
+
+
+
+````
