@@ -5,19 +5,10 @@ date: "October 28, 2017"
 output: html_document
 ---
 
-## Principal Component Analysis
-In this assignment, you will implement the Principal Component Analysis method for face recognition (see below). Using a set of training images, you will compute the set of Eigenvectors to find the principal components representing the face space. Using a subset, the first ten (10) Eigenvectors, you will find the corresponding weighted sum of the Eigenvectors for each image in the testing set and perform a face matching experiment. Distance scores will be calculated by subtracting the weights ωi from ωj and summing their total LaTeX: ∑(ωi−ωj).
-
-Using the distance scores calculated from each image pair, you will perform an all vs. all matching experiment to create a distance matrix. Next, you will plot the genuine and impostor distributions using the same implementation as Homework Assignment 1. Finally, you will plot the DET curve (FAR vs. FRR), line of equal error, and estimate the Equal Error Rate.
-
-## Step 1
-Implement the each image as a d-dimensional column vector x1, x2,...,xN and compute the average µ. 
-
-The mean is the row-wise mean when all of the images are stored in a single matrix. Compute average of training set
 ```{r}
 library("png")
-
-filepath = "~/Developments/csci454-biometrics/hw/hw02/trainingfaces2/"
+library("reshape")
+filepath = "~/Developments/csci454-biometrics/hw/hw03/trainingfaces2/"
 filenames = list.files(filepath, pattern = "*.png")
 fullpathnames = paste(filepath, filenames, sep="")
 
@@ -29,40 +20,15 @@ for(i in 1:length(fullpathnames)) {
 the.mean <- rowMeans(images)
 xmean <- apply(images, 1, function(x) x-the.mean)
 
-```
-
-## Step 2
-Define the matrix X as the follows: X = [(x1-µ) (x2-µ) ... (xN-µ)]. X is a d x N matrix.
-
-```{r}
 xt.matrix <- t(xmean)
-```
-
-## Step 3
-Calculate the covariance matrix C = XXT, where XT is the transpose of X. d by N multiplied by a N by d matrix is results in a d by d matrix.
-```{r}
 covariance <- xmean %*% xt.matrix;
-```
 
-## Step 4
-Compute the Eigenvectors of the covariance matrix C by solving the following Eigen system: CE = 𝜆E (The right size of the equation is scalar multiplication, and the left side is matrix multiplication.)
-```{r}
 ev = eigen(covariance)
 ten.eigen.vectors <- ev$vectors[,1:10]
 et <- t(ten.eigen.vectors)
 
-```
-
-## Step 5 
-Any vector x can be represented as a weighted sum of the Eigenvectors, ω = ETx, where ωj is the weight associated with the Eigenvector ej
-```{r}
 weight <- et %*% xmean
-```
-
-## Testing data
-
-``` {r}
-filepath.test = "~/Developments/csci454-biometrics/hw/hw02/testingfaces2/"
+filepath.test = "~/Developments/csci454-biometrics/hw/hw03/testingfaces2/"
 filenames.test = list.files(filepath.test, pattern = "*.png")
 fullpathnames.test = paste(filepath.test, filenames.test, sep="")
 
@@ -72,37 +38,34 @@ for(i in 1:length(fullpathnames.test)) {
   images.test <- cbind(images.test, et %*% d)
 }
 
-## subtract the difference between 2 columns, get the absolute and then sum everything up = which equals to the distance scores
-difference <- c()
-for(i in c(1:dim(images.test[2]))) {
-    difference <- cbind(abs())
+difference <- matrix(data = NA, nrow = dim(images.test)[2], ncol = dim(images.test)[2])
+for(i in 1:229) {
+  for(j in 1:229) {
+   difference[i,j] <- sum(abs(images.test[,i] - images.test[,j]))
+  }
 }
 
-```
+rownames(difference) <- filenames.test
+colnames(difference) <- filenames.test
 
-## Hw 1
-Using the distance scores calculated from each image pair, you will perform an all vs. all matching experiment to create a distance matrix. Next, you will plot the genuine and impostor distributions using the same implementation as Homework Assignment 1. Finally, you will plot the DET curve (FAR vs. FRR), line of equal error, and estimate the Equal Error Rate.
+distance.scores.table <- melt(difference)[melt(upper.tri(difference))$value,]
+
+```
 
 
 ```{r}
-scores <- read.csv("hw1_list.csv")
-scores$Match <- ifelse(substr(scores$sequence1,1,6) == substr(scores$sequence2,1,6),"Genuine", "Imposter")
+library(plyr)
+scores <- rename(distance.scores.table, c("X1" = "sequence1", "X2" = "sequence2", "value" = "score"))
+
+scores$Match <- ifelse(substr(scores$sequence1,1,3) == substr(scores$sequence2,1,3),"Genuine", "Imposter")
 genuine.scores <- subset(scores, Match == "Genuine")
 imposter.scores <- subset(scores, Match == "Imposter")
-```
 
-## 1) Distribution of Genuine and Imposter Scores
-
-```{r}
 hist(genuine.scores$score, col = rgb(1,0,0,0.5), main = "Genuine and Imposter Distribution", xlab = "Distance Scores", ylab = "Frequency", freq = FALSE)
 hist(imposter.scores$score, col = rgb(0,0,1,0.5), add = T, freq = FALSE)
 legend("top", c("Genuine", "Imposter"), fill=c(rgb(1,0,0,0.5), rgb(0,0,1,0.5)))
 
-
-```
-
-## 2) D-prime
-```{r}
+## dprime 
 genuine.sd <- sd(genuine.scores$score)
 imposter.sd <- sd(imposter.scores$score)
 genuine.mean <- mean(genuine.scores$score)
@@ -110,31 +73,37 @@ imposter.mean <- mean(imposter.scores$score)
 
 dprime <- (sqrt(2) * abs((genuine.mean)-(imposter.mean)))/sqrt((genuine.sd^2)+(imposter.sd^2))
 
-```
+## det curve
+genuine <- subset(scores, Match == "Genuine")
+imposter <- subset(scores, Match == "Imposter")
 
-D-prime is approximately 
+minimum <- min(scores$score)
+maximum <- max(scores$score)
 
+threshold <- minimum
+iter <- 100
+step <- (maximum - minimum)/iter
 
-## 3) Detection Error Tradeoff (DET) Curve
+FRR <- vector(length = iter)
+FAR <- vector(length = iter)
 
-```{r}
-  FAR <- c()
-  FRR <- c()
-  
-for(threshold in seq(0.2, 0.99, 0.02)) {
-  far.formula <-nrow(subset(imposter.scores, imposter.scores$score < threshold))/nrow(imposter.scores)
-  FAR <- c(FAR, far.formula)
-  frr.formula <- nrow(subset(genuine.scores, genuine.scores$score >= threshold))/nrow(genuine.scores)
-  FRR <- c(FRR, frr.formula)
+for (i in 1:iter){
+  FA <- subset(imposter, score <= threshold)
+  FR <- subset(genuine, score > threshold)
+  FAR[i] <- dim(FA)[1]/dim(imposter)[1]
+  FRR[i] <- dim(FR)[1]/dim(genuine)[1]
+  threshold <- threshold + step
 }
 
-x <- seq(0.0, 0.3, 0.1)
-y <- seq(0.0, 0.3, 0.1)
+ERRplot <- data.frame(FAR, FRR)
 
-  
-plot(FAR, FRR, xlim = range(0 , 0.75), ylim = range (0, 0.35), type = "l", col = "blue")
-lines(x, y, col = "red")
+ggplot(ERRplot, aes(x=FAR, y=FRR)) + 
+geom_line() + geom_abline(slope=1, linetype = "dashed") + 
+geom_point(aes(x=0.435, 0.435)) + 
+xlab("FRR") + 
+ylab("FAR") +
+ggtitle("Detection Error Tradeoff") +
+theme(plot.title = element_text(hjust = 0.5))
 
 ```
 
-Equal Error Rate is approximately 

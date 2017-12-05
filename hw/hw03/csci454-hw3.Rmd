@@ -1,0 +1,137 @@
+---
+title: "homework3"
+author: "MJ Pascual"
+date: "November 28, 2017"
+output: html_document
+---
+
+```{r}
+library("png")
+library("reshape")
+filepath = "~/Developments/csci454-biometrics/hw/hw03/trainingfaces2/"
+filenames = list.files(filepath, pattern = "*.png")
+fullpathnames = paste(filepath, filenames, sep="")
+
+images <- c()
+for(i in 1:length(fullpathnames)) {
+  images <- cbind(images, as.vector(readPNG(fullpathnames[i])))
+}
+
+# normalized images 
+normalized.images <- c()
+for(i in 1:length(fullpathnames)) {
+  x <- as.vector(readPNG(fullpathnames[i]))
+  normalized.images <-c((x - minimum)/
+                          (maximum-minimum))
+  images <- cbind(images, normalized.images)
+}
+
+# read in aligned images
+filepath.aligned = "~/Developments/csci454-biometrics/hw/hw03/trainingrotated2/"
+filenames.aligned = list.files(filepath, pattern = "*.png")
+fullpathnames.aligned = paste(filepath, filenames, sep="")
+
+# aligned 
+aligned.images <- c()
+for(i in 1:length(fullpathnames.aligned)) {
+ aligned.images <- cbind(images, as.vector(readPNG(fullpathnames.aligned[i])))
+  }
+
+normalized.aligned.images <- c()
+for(i in 1:length(fullpathnames.aligned)) {
+  x <- as.vector(readPNG(fullpathnames.aligned[i]))
+  normalized.aligned.images <-c((x - minimum)/
+                          (maximum-minimum))
+  aligned.images <- cbind(aligned.images, normalized.aligned.images)
+}
+
+the.mean <- rowMeans(images)
+xmean <- apply(images, 1, function(x) x-the.mean)
+
+xt.matrix <- t(xmean)
+covariance <- xmean %*% xt.matrix;
+
+ev = eigen(covariance)
+ten.eigen.vectors <- ev$vectors[,1:30]
+et <- t(ten.eigen.vectors)
+
+weight <- et %*% xmean
+
+filepath.test = "~/Developments/csci454-biometrics/hw/hw03/testingfaces2/"
+filenames.test = list.files(filepath.test, pattern = "*.png")
+fullpathnames.test = paste(filepath.test, filenames.test, sep="")
+
+images.test <- c()
+for(i in 1:length(fullpathnames.test)) {
+  d <- cbind(as.vector(readPNG(fullpathnames.test[i])))
+  images.test <- cbind(images.test, et %*% d)
+}
+
+difference <- matrix(data = NA, nrow = dim(images.test)[2], ncol = dim(images.test)[2])
+for(i in 1:229) {
+  for(j in 1:229) {
+   difference[i,j] <- sum(abs(images.test[,i] - images.test[,j]))
+  }
+}
+
+rownames(difference) <- filenames.test
+colnames(difference) <- filenames.test
+
+distance.scores.table <- melt(difference)[melt(upper.tri(difference))$value,]
+
+```
+
+
+```{r}
+library(plyr)
+scores <- rename(distance.scores.table, c("X1" = "sequence1", "X2" = "sequence2", "value" = "score"))
+
+scores$Match <- ifelse(substr(scores$sequence1,1,3) == substr(scores$sequence2,1,3),"Genuine", "Imposter")
+genuine.scores <- subset(scores, Match == "Genuine")
+imposter.scores <- subset(scores, Match == "Imposter")
+
+hist(genuine.scores$score, col = rgb(1,0,0,0.5), main = "Genuine and Imposter Distribution", xlab = "Distance Scores", ylab = "Frequency", freq = FALSE)
+hist(imposter.scores$score, col = rgb(0,0,1,0.5), add = T, freq = FALSE)
+legend("top", c("Genuine", "Imposter"), fill=c(rgb(1,0,0,0.5), rgb(0,0,1,0.5)))
+
+## dprime 
+genuine.sd <- sd(genuine.scores$score)
+imposter.sd <- sd(imposter.scores$score)
+genuine.mean <- mean(genuine.scores$score)
+imposter.mean <- mean(imposter.scores$score)
+
+dprime <- (sqrt(2) * abs((genuine.mean)-(imposter.mean)))/sqrt((genuine.sd^2)+(imposter.sd^2))
+
+## det curve
+genuine <- subset(scores, Match == "Genuine")
+imposter <- subset(scores, Match == "Imposter")
+
+minimum <- min(scores$score)
+maximum <- max(scores$score)
+
+threshold <- minimum
+iter <- 100
+step <- (maximum - minimum)/iter
+
+FRR <- vector(length = iter)
+FAR <- vector(length = iter)
+
+for (i in 1:iter){
+  FA <- subset(imposter, score <= threshold)
+  FR <- subset(genuine, score > threshold)
+  FAR[i] <- dim(FA)[1]/dim(imposter)[1]
+  FRR[i] <- dim(FR)[1]/dim(genuine)[1]
+  threshold <- threshold + step
+}
+
+ERRplot <- data.frame(FAR, FRR)
+
+ggplot(ERRplot, aes(x=FAR, y=FRR)) + 
+geom_line() + geom_abline(slope=1, linetype = "dashed") + 
+geom_point(aes(x=0.435, 0.435)) + 
+xlab("FRR") + 
+ylab("FAR") +
+ggtitle("Detection Error Tradeoff") +
+theme(plot.title = element_text(hjust = 0.5))
+
+```
