@@ -8,6 +8,11 @@ output: html_document
 ```{r}
 library("png")
 library("reshape")
+library("ggplot2")
+
+minimum <- min(scores$score)
+maximum <- max(scores$score)
+
 filepath = "~/Developments/csci454-biometrics/hw/hw03/trainingfaces2/"
 filenames = list.files(filepath, pattern = "*.png")
 fullpathnames = paste(filepath, filenames, sep="")
@@ -79,6 +84,10 @@ colnames(difference) <- filenames.test
 
 distance.scores.table <- melt(difference)[melt(upper.tri(difference))$value,]
 
+lrpca <- function(training, testing) { 
+  
+  }
+
 ```
 
 
@@ -106,9 +115,6 @@ dprime <- (sqrt(2) * abs((genuine.mean)-(imposter.mean)))/sqrt((genuine.sd^2)+(i
 genuine <- subset(scores, Match == "Genuine")
 imposter <- subset(scores, Match == "Imposter")
 
-minimum <- min(scores$score)
-maximum <- max(scores$score)
-
 threshold <- minimum
 iter <- 100
 step <- (maximum - minimum)/iter
@@ -123,6 +129,8 @@ for (i in 1:iter){
   FRR[i] <- dim(FR)[1]/dim(genuine)[1]
   threshold <- threshold + step
 }
+
+#err plot
 
 ERRplot <- data.frame(FAR, FRR)
 
