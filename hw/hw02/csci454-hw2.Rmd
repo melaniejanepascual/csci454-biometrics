@@ -14,7 +14,7 @@ fullpathnames = paste(filepath, filenames, sep="")
 
 images <- c()
 for(i in 1:length(fullpathnames)) {
-  images <- cbind(images, as.vector(readPNG(fullpathnames[i])))
+  images <- cbind(images, as.vector(readPNG(fullpathnames[1])))
 }
 
 the.mean <- rowMeans(images)
@@ -28,6 +28,8 @@ ten.eigen.vectors <- ev$vectors[,1:10]
 et <- t(ten.eigen.vectors)
 
 weight <- et %*% xmean
+
+# testing
 filepath.test = "~/Developments/csci454-biometrics/hw/hw03/testingfaces2/"
 filenames.test = list.files(filepath.test, pattern = "*.png")
 fullpathnames.test = paste(filepath.test, filenames.test, sep="")

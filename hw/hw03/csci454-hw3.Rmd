@@ -16,7 +16,7 @@ images <- c()
 for(i in 1:length(fullpathnames)) {
   images <- cbind(images, as.vector(readPNG(fullpathnames[i])))
 }
-
+#PCA
 the.mean <- rowMeans(images)
 xmean <- apply(images, 1, function(x) x-the.mean)
 
@@ -114,6 +114,7 @@ Equal Error Rate: 0.435
 
 ```{r}
 library("png")
+library("ggplot2")
 library("reshape")
 filepath = "~/Developments/csci454-biometrics/hw/hw03/trainingfaces2/"
 filenames = list.files(filepath, pattern = "*.png")
@@ -224,29 +225,23 @@ library("png")
 library("reshape")
 library("ggplot2")
 
-minimum <- min(scores$score)
-maximum <- max(scores$score)
-
 filepath = "~/Developments/csci454-biometrics/hw/hw03/trainingfaces2/"
 filenames = list.files(filepath, pattern = "*.png")
 fullpathnames = paste(filepath, filenames, sep="")
 
 images <- c()
-for(i in 1:length(fullpathnames)) {
-  images <- cbind(images, as.vector(readPNG(fullpathnames[i])))
-}
-
-# normalized images 
 normalized.images <- c()
 for(i in 1:length(fullpathnames)) {
   x <- as.vector(readPNG(fullpathnames[i]))
-  normalized.images <-c((x - minimum)/
-                          (maximum-minimum))
+  minimum <- min(x)
+  maximum <-max(x)
+  normalized.images <-(x - minimum)/
+                          (maximum-minimum)
   images <- cbind(images, normalized.images)
 }
 
 the.mean <- rowMeans(images)
-xmean <- apply(images, 1, function(x) x-the.mean)
+xmean <- apply(images, 2, function(x) x-the.mean)
 
 xt.matrix <- t(xmean)
 covariance <- xmean %*% xt.matrix;
@@ -306,6 +301,9 @@ dprime <- (sqrt(2) * abs((genuine.mean)-(imposter.mean)))/sqrt((genuine.sd^2)+(i
 genuine <- subset(scores, Match == "Genuine")
 imposter <- subset(scores, Match == "Imposter")
 
+minimum <- min(scores$score)
+maximum <- max(scores$score)
+
 threshold <- minimum
 iter <- 100
 step <- (maximum - minimum)/iter
@@ -321,13 +319,11 @@ for (i in 1:iter){
   threshold <- threshold + step
 }
 
-#err plot
-
 ERRplot <- data.frame(FAR, FRR)
 
 ggplot(ERRplot, aes(x=FAR, y=FRR)) + 
 geom_line() + geom_abline(slope=1, linetype = "dashed") + 
-geom_point(aes(x=0.435, 0.435)) + 
+geom_point(aes(x=0.398, 0.398)) + 
 xlab("FRR") + 
 ylab("FAR") +
 ggtitle("Detection Error Tradeoff") +
@@ -335,51 +331,43 @@ theme(plot.title = element_text(hjust = 0.5))
 
 ```
 
-## ALIGNED IMAGES, 30 EIGENVECTORS
+D-prime: .50729
+EER: .398
+
+## NORMALIZED ALIGNED IMAGES, 30 EIGENVECTORS
 
 ```{r}
 library("png")
 library("reshape")
-filepath = "~/Developments/csci454-biometrics/hw/hw03/trainingfaces2/"
-filenames = list.files(filepath, pattern = "*.png")
-fullpathnames = paste(filepath, filenames, sep="")
 
-images <- c()
-for(i in 1:length(fullpathnames)) {
-  images <- cbind(images, as.vector(readPNG(fullpathnames[i])))
-}
-
-
-# read in aligned images
 filepath.aligned = "~/Developments/csci454-biometrics/hw/hw03/trainingrotated2/"
 filenames.aligned = list.files(filepath, pattern = "*.png")
 fullpathnames.aligned = paste(filepath, filenames, sep="")
 
-# aligned 
 aligned.images <- c()
 for(i in 1:length(fullpathnames.aligned)) {
- aligned.images <- cbind(images, as.vector(readPNG(fullpathnames.aligned[i])))
-  }
+   aligned.images <- cbind(aligned.images, as.vector(readPNG(fullpathnames.aligned[i])))
+}
 
 normalized.aligned.images <- c()
 for(i in 1:length(fullpathnames.aligned)) {
   x <- as.vector(readPNG(fullpathnames.aligned[i]))
+  minimum <- min(x)
+  maximum <-max(x)
   normalized.aligned.images <-c((x - minimum)/
                           (maximum-minimum))
   aligned.images <- cbind(aligned.images, normalized.aligned.images)
 }
 
-the.mean <- rowMeans(images)
-xmean <- apply(images, 1, function(x) x-the.mean)
-
+the.mean <- rowMeans(aligned.images)
+xmean <- apply(aligned.images, 2, function(x) x-the.mean)
 xt.matrix <- t(xmean)
 covariance <- xmean %*% xt.matrix;
-
 ev = eigen(covariance)
 ten.eigen.vectors <- ev$vectors[,1:30]
 et <- t(ten.eigen.vectors)
-
 weight <- et %*% xmean
+
 filepath.test = "~/Developments/csci454-biometrics/hw/hw03/testingfaces2/"
 filenames.test = list.files(filepath.test, pattern = "*.png")
 fullpathnames.test = paste(filepath.test, filenames.test, sep="")
@@ -451,36 +439,120 @@ ERRplot <- data.frame(FAR, FRR)
 
 ggplot(ERRplot, aes(x=FAR, y=FRR)) + 
 geom_line() + geom_abline(slope=1, linetype = "dashed") + 
-geom_point(aes(x=0.42, 0.42)) + 
+geom_point(aes(x=0.396, 0.396)) + 
 xlab("FRR") + 
 ylab("FAR") +
 ggtitle("Detection Error Tradeoff") +
 theme(plot.title = element_text(hjust = 0.5))
 
 ```
-
+D-prime: 0.5091965
+EER: .396
 ## LOCAL REGION PCA, 20 EIGENVECTORS FOR EACH 
 
 ```{r}
-
-  ## split the image into 9 parts
 library("png")
-testimg <- readPNG("~/Developments/csci454-biometrics/hw/hw03/8_0.png")
- ## do i put it in a for loop?
-img1 <- testimg[c(1:20), c(1:20)]
-img2 <- testimg[c(1:20), c(21:40)]
-img3 <- testimg[c(1:20), c(41:60)]
-img4 <- testimg[c(21:40), c(1:21)]
-img5 <- testimg[c(21:40), c(21:40)]
-img6 <- testimg[c(21:40), c(41:60)]
-img7 <- testimg[c(41:60), c(1:20)]
-img8 <- testimg[c(41:60), c(21:40)]
-img9 <- testimg[c(41:60), c(41:60)]
+library("reshape")
+library("ggplot2")
+  
+  img1 <- c()
+  img2 <- c()
+  img3 <- c()
+  img4 <- c()
+  img5 <- c()
+  img6 <- c()
+  img7 <- c()
+  img8 <- c()
+  img9 <- c()
+  
+  img1t <- c()
+  img2t <- c()
+  img3t <- c()
+  img4t <- c()
+  img5t <- c()
+  img6t <- c()
+  img7t <- c()
+  img8t <- c()
+  img9t <- c()
+  
+  # aligned images - training
+  filepath.aligned ="~/Developments/csci454-biometrics/hw/hw03/trainingrotated2/"
+  filenames.aligned = list.files(filepath, pattern = "*.png")
+  fullpathnames.aligned = paste(filepath, filenames, sep="")
+  
+  aligned.images <- c()
+  for(i in 1:length(fullpathnames.aligned)) {
+    aligned.images <- cbind(aligned.images, as.vector(readPNG(fullpathnames.aligned[i])))
+  }
+  
+  normalized.aligned.images <- c()
+  for(i in 1:length(fullpathnames.aligned)) {
+    x <- readPNG(fullpathnames.aligned[i])
+    minimum <- min(x)
+    maximum <-max(x)
+    normalized.aligned.images <-c((x - minimum)/
+                                    (maximum-minimum))
+    aligned.images <- cbind(aligned.images, normalized.aligned.images)
+    img1 <- x[c(1:20), c(1:20)]
+    img2 <- x[c(1:20), c(21:40)]
+    img3 <- x[c(1:20), c(41:60)]
+    img4 <- x[c(21:40), c(1:21)]
+    img5 <- x[c(21:40), c(21:40)]
+    img6 <- x[c(21:40), c(41:60)]
+    img7 <- x[c(41:60), c(1:20)]
+    img8 <- x[c(41:60), c(21:40)]
+    img9 <- x[c(41:60), c(41:60)]
+  }
 
-weight.lrpca <- as.vector(img1) + as.vector(img2 * 2) + as.vector(img3) +  as.vector(img4 * 2) + as.vector(img5 * 2) + as.vector(img6 * 2) + as.vector(img7) + as.vector(img8 * 2) + as.vector(img9)
+  # normalized images - testing
+  filepath.aligned.test = "~/Developments/csci454-biometrics/hw/hw03/testingaligned2/"
+  filenames.aligned.test = list.files(filepath, pattern = "*.png")
+  fullpathnames.aligned.test = paste(filepath, filenames, sep="")
+  
+  images <- c()
+  normalized.images <- c()
+  for(i in 1:length(fullpathnames.aligned.test)) {
+    x <- readPNG(fullpathnames.aligned.test[i])
+    minimum <- min(x)
+    maximum <-max(x)
+    normalized.images <-(x - minimum)/
+      (maximum-minimum)
+    images <- cbind(images, normalized.images)
+    img1t <- x[c(1:20), c(1:20)]
+    img2t <- x[c(1:20), c(21:40)]
+    img3t <- x[c(1:20), c(41:60)]
+    img4t <- x[c(21:40), c(1:21)]
+    img5t <- x[c(21:40), c(21:40)]
+    img6t <- x[c(21:40), c(41:60)]
+    img7t <- x[c(41:60), c(1:20)]
+    img8t <- x[c(41:60), c(21:40)]
+    img9t <- x[c(41:60), c(41:60)]
+  }
 
-lrpca <- function(training, testing) { 
+  pca <- function(training, testing){
+    the.mean <- rowMeans(training)
+    xmean <- apply(training, 1, function(x) x-the.mean)
+    xt.matrix <- t(xmean)
+    covariance <- xmean %*% xt.matrix;
+    ev = eigen(covariance)
+    twenty.eigen.vectors <- ev$vectors[,1:20]
+    et <- t(twenty.eigen.vectors)
+    weight <- et %*% xmean
+    difference <- matrix(data = NA, nrow = dim(testing)[2], ncol = dim(testing)[2])
+    for(i in 1:229) {
+      for(j in 1:229) {
+        difference[i,j] <- sum(abs(testing[,i] - testing[,j]))
+      }
+    }
+    rownames(difference) <- filenames.test
+    colnames(difference) <- filenames.test
+    distance.scores.table <- melt(difference)[melt(upper.tri(difference))$value,]
+    return(distance.scores.table)
+  }
 
-}
+  
+  ## final score
+  score <- pca(img1, img1t) + 2*pca(img2, img2t) + pca(img3, img3t) + 2*pca(img4, img4t)   + 2*pca(img5, img5t) + 2*pca(img6, img6t) + pca(img7, img7t) + 2*pca(img8, img8t) + 
+    pca(img9, img9t)
 
 ```
